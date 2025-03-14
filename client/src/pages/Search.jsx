@@ -15,7 +15,7 @@ const [sidebardata, setSidebardata] = useState({
 });
 const [loading, setLoading] = useState(false);
 const [listings, setListings] = useState([]);
-console.log(listings);
+const [showMore, setShowMore] = useState(false);
 
 useEffect(() => {
   const urlParams = new URLSearchParams(location.search);
@@ -41,9 +41,15 @@ useEffect(() => {
 
   const fetchListings = async () => {
     setLoading(true);
+    setShowMore(false);
     const searchQuery = urlParams.toString();
     const res = await fetch(`/api/listing/get?${searchQuery}`);
     const data = await res.json();
+    if (data.length > 8) {
+      setShowMore(true);
+    } else {
+      setShowMore(false);
+    }
     setListings(data);
     setLoading(false);
   };
@@ -77,7 +83,19 @@ const handleSubmit = (e) => {
   urlParams.set('offer', sidebardata.offer);
   urlParams.set('sort', sidebardata.sort);
   urlParams.set('order', sidebardata.order);
-  navigate(`/search?${urlParams.toString()}`);
+  const searchQuery = urlParams.toString();
+  navigate(`/search?${searchQuery}`);
+};
+const onShowMoreClick = async () => {
+  const numberOfListings = listings.length;
+  const startIndex = numberOfListings;
+  const urlParams = new URLSearchParams(location.search);
+  urlParams.set('startIndex', startIndex);
+  const searchQuery = urlParams.toString();
+  const res = await fetch(`/api/listing/get?${searchQuery}`);
+  const data = await res.json();
+  if (data.length < 9) setShowMore(false);
+  setListings([...listings, ...data]);
 };
 
   return (
@@ -162,6 +180,15 @@ const handleSubmit = (e) => {
   {!loading && listings.length === 0 && <p className="text-xl text-slate-700">No listing found!</p>}
   {loading && <p className="text-xl text-slate-700 text-center w-full">Loading...</p>}
   {!loading && listings && listings.map((listing) => <ListingItem key={listing._id} listing={listing} />)}
+
+  {showMore && (
+<button
+  onClick={onShowMoreClick}
+  className='text-green-700 hover:underline p-7 text-center w-full'
+>
+  Show more
+</button>
+)}
 </div>
 
 
